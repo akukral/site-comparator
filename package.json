@@ -1,6 +1,6 @@
 {
   "name": "@akukral/site-comparator",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A sophisticated website comparison tool with intelligent content analysis and offset-aware difference detection",
   "keywords": [
     "website",
