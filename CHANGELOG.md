@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2025-01-27
+
+### 📝 Documentation
+- Updated package references from `site-comparator` to `@akukral/site-comparator` in README.md
+- Fixed programmatic usage examples to use correct scoped package name
+- Updated PACKAGE_SUMMARY.md with proper package references
+- Ensured all documentation reflects the correct npm package installation path
+
+### 🔧 Maintenance
+- Standardized package name references across all documentation files
+- Improved clarity for users installing via npm
+
 ## [1.1.0] - 2025-08-29
 
 ### 🔒 Security

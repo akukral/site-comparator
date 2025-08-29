@@ -63,7 +63,7 @@ npm run site-comparator https://staging.example.com https://example.com
 npx site-comparator https://staging.example.com https://example.com
 
 # Direct execution
-node node_modules/site-comparator/comparator.js https://staging.example.com https://example.com
+node node_modules/@akukral/site-comparator/comparator.js https://staging.example.com https://example.com
 ```
 
 ### Authentication Examples
@@ -102,7 +102,7 @@ site-comparator <domain1> <domain2> [options]
 ### Programmatic Usage
 
 ```javascript
-const Comparator = require('site-comparator');
+const Comparator = require('@akukral/site-comparator');
 
 const comparator = new Comparator({
     maxPages: 30,

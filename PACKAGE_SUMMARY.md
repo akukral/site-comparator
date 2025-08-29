@@ -58,7 +58,7 @@ COMPARATOR_USERNAME=user COMPARATOR_PASSWORD=pass \
 
 ### Programmatic Usage
 ```javascript
-const Comparator = require('site-comparator');
+const Comparator = require('@akukral/site-comparator');
 
 const comparator = new Comparator({
     maxPages: 30,
