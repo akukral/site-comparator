@@ -23,13 +23,13 @@ A sophisticated website comparison tool that performs intelligent content analys
 ### Global Installation (Recommended)
 
 ```bash
-npm install -g site-comparator
+npm install -g @akukral/site-comparator
 ```
 
 ### Local Installation
 
 ```bash
-npm install site-comparator
+npm install @akukral/site-comparator
 ```
 
 ### From Source
