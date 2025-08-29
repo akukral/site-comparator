@@ -1,0 +1,59 @@
+{
+  "name": "site-comparator",
+  "version": "1.0.0",
+  "description": "A sophisticated website comparison tool with intelligent content analysis and offset-aware difference detection",
+  "main": "comparator.js",
+  "bin": {
+    "site-comparator": "./comparator.js"
+  },
+  "scripts": {
+    "start": "node comparator.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "website",
+    "comparison",
+    "diff",
+    "crawler",
+    "testing",
+    "development",
+    "testing",
+    "staging",
+    "production",
+    "content-analysis",
+    "automation",
+    "ci-cd",
+    "quality-assurance",
+    "web-scraping",
+    "puppeteer",
+    "cheerio",
+    "site-comparator",
+    "website-diff"
+  ],
+  "author": {
+    "name": "Allan Kukral",
+    "email": "me@allankukral.com"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/akukral/site-comparator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/akukral/site-comparator/issues"
+  },
+  "homepage": "https://github.com/akukral/site-comparator#readme",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "dependencies": {
+    "cheerio": "^1.1.2",
+    "puppeteer": "^24.17.1"
+  },
+  "preferGlobal": true,
+  "files": [
+    "comparator.js",
+    "README.md",
+    "LICENSE"
+  ]
+}
