@@ -1,6 +1,6 @@
 {
-  "name": "@akukral/site-comparator",
-  "version": "1.0.2",
+  "name": "site-comparator",
+  "version": "1.0.0",
   "description": "A sophisticated website comparison tool with intelligent content analysis and offset-aware difference detection",
   "keywords": [
     "website",
@@ -53,7 +53,6 @@
     "cheerio": "^1.1.2",
     "puppeteer": "^24.17.1"
   },
-  "devDependencies": {},
   "engines": {
     "node": ">=16.0.0"
   },
