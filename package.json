@@ -1,6 +1,6 @@
 {
   "name": "site-comparator",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "A sophisticated website comparison tool with intelligent content analysis and offset-aware difference detection",
   "keywords": [
     "website",
@@ -37,6 +37,11 @@
   "bin": {
     "site-comparator": "comparator.js"
   },
+  "scripts": {
+    "start": "node comparator.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "site-comparator": "node comparator.js"
+  },
   "directories": {
     "example": "examples"
   },
@@ -45,10 +50,6 @@
     "README.md",
     "LICENSE"
   ],
-  "scripts": {
-    "start": "node comparator.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "dependencies": {
     "cheerio": "^1.1.2",
     "puppeteer": "^24.17.1"

@@ -25,12 +25,12 @@ site-comparator/
 
 ### Global Installation (Recommended)
 ```bash
-npm install -g site-comparator
+npm install -g @akukral/site-comparator
 ```
 
 ### Local Installation
 ```bash
-npm install site-comparator
+npm install @akukral/site-comparator
 ```
 
 ### From Source
@@ -248,7 +248,7 @@ npm login
 npm publish
 
 # Verify installation
-npm install -g site-comparator
+npm install -g @akukral/site-comparator
 ```
 
 ## 🤝 Contributing

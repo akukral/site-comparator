@@ -45,12 +45,25 @@ npm link  # Makes it available globally
 
 ### Basic Usage
 
+#### Global Installation
 ```bash
 # Compare two websites
 site-comparator https://staging.example.com https://example.com
 
 # With custom options
 site-comparator https://dev.site.com https://site.com --max-pages 20 --delay 2000
+```
+
+#### Local Installation
+```bash
+# Using npm script
+npm run site-comparator https://staging.example.com https://example.com
+
+# Using npx
+npx site-comparator https://staging.example.com https://example.com
+
+# Direct execution
+node node_modules/site-comparator/comparator.js https://staging.example.com https://example.com
 ```
 
 ### Authentication Examples

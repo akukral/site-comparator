@@ -38,10 +38,10 @@ We successfully renamed the project from **"Comparator"** to **"Site Comparator"
 ### Package Installation
 ```bash
 # ✅ Global installation works
-npm install -g site-comparator
+npm install -g @akukral/site-comparator
 
 # ✅ Command is available
-which site-comparator
+which @akukral/site-comparator
 # Output: /opt/homebrew/bin/site-comparator
 
 # ✅ Help command works
@@ -121,10 +121,10 @@ await comparator.compare(url1, url2);
 ### Installation Methods
 ```bash
 # Global installation (recommended)
-npm install -g site-comparator
+npm install -g @akukral/site-comparator
 
 # Local installation
-npm install site-comparator
+npm install @akukral/site-comparator
 
 # From source
 git clone https://github.com/akukral/site-comparator
