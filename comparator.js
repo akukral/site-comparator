@@ -12,7 +12,8 @@ const readlineSync = require('readline-sync');
 class Comparator {
     constructor(options = {}) {
         this.options = {
-            maxPages: 50,
+            maxPages: 20,
+            maxDiscovery: 500,
             delay: 1000,
             timeout: 30000,
             ignoreElements: ['script', 'noscript', 'style'],
@@ -782,7 +783,7 @@ class Comparator {
 
         console.log(`Discovering pages from ${domain}...`);
 
-        while (toVisit.length > 0 && discovered.size < this.options.maxPages) {
+        while (toVisit.length > 0 && pages.size < this.options.maxPages) {
             const url = toVisit.shift();
 
             if (this.visited.has(url)) continue;
@@ -803,7 +804,8 @@ class Comparator {
                             !discovered.has(link) &&
                             !link.includes('#') && // Skip anchor links
                             !link.includes('?') && // Skip query parameters for now
-                            discovered.size < this.options.maxPages) {
+                            pages.size < this.options.maxPages &&
+                            discovered.size < this.options.maxDiscovery) {
 
                             discovered.add(link);
                             toVisit.push(link);
@@ -816,8 +818,8 @@ class Comparator {
             }
 
             // Show progress
-            if (discovered.size % 5 === 0) {
-                console.log(`  Discovered ${discovered.size} pages from ${domain}`);
+            if (pages.size % 5 === 0) {
+                console.log(`  Crawled ${pages.size} pages from ${domain}`);
             }
         }
 
@@ -1233,10 +1235,11 @@ Authentication Examples:
   site-comparator https://staging.example.com https://example.com
 
 Options:
-  --max-pages <number>    Maximum pages to crawl (default: 50)
-  --delay <ms>           Delay between requests (default: 1000)
-  --timeout <ms>         Page load timeout (default: 30000)
-  --output-dir <path>    Output directory (default: ./comparator-results)
+  --max-pages <number>      Maximum pages to crawl (default: 20)
+  --max-discovery <number>  Maximum unique links to discover (default: 500)
+  --delay <ms>              Delay between requests (default: 1000)
+  --timeout <ms>            Page load timeout (default: 30000)
+  --output-dir <path>       Output directory (default: ./comparator-results)
 
 Environment Variables:
   COMPARATOR_USERNAME      Default username for both sites
@@ -1271,6 +1274,9 @@ Features:
         switch (key) {
             case 'max-pages':
                 options.maxPages = parseInt(value);
+                break;
+            case 'max-discovery':
+                options.maxDiscovery = parseInt(value);
                 break;
             case 'delay':
                 options.delay = parseInt(value);

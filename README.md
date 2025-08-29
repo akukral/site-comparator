@@ -94,7 +94,8 @@ site-comparator <domain1> <domain2> [options]
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--max-pages <number>` | Maximum pages to crawl per site | 50 |
+| `--max-pages <number>` | Maximum pages to crawl per site | 20 |
+| `--max-discovery <number>` | Maximum unique links to discover | 500 |
 | `--delay <ms>` | Delay between requests (milliseconds) | 1000 |
 | `--timeout <ms>` | Page load timeout (milliseconds) | 30000 |
 | `--output-dir <path>` | Output directory for reports | `./comparator-results` |
@@ -105,7 +106,8 @@ site-comparator <domain1> <domain2> [options]
 const Comparator = require('@akukral/site-comparator');
 
 const comparator = new Comparator({
-    maxPages: 30,
+    maxPages: 20,
+    maxDiscovery: 500,
     delay: 1500,
     timeout: 45000,
     outputDir: './my-results'
@@ -182,19 +184,20 @@ Visual report with:
 
 ```javascript
 const options = {
-    maxPages: 50,                    // Maximum pages to crawl per site
-    delay: 1000,                     // Delay between requests (ms)
-    timeout: 30000,                  // Page load timeout (ms)
-    ignoreElements: [                // HTML elements to ignore
+    maxPages: 20,                     // Maximum pages to crawl per site
+    maxDiscovery: 500,                // Maximum unique links to discover (queue cap)
+    delay: 1000,                      // Delay between requests (ms)
+    timeout: 30000,                   // Page load timeout (ms)
+    ignoreElements: [                 // HTML elements to ignore
         'script', 'noscript', 'style'
     ],
-    ignoreAttributes: [              // Attributes to ignore
+    ignoreAttributes: [               // Attributes to ignore
         'data-csrf', 'csrf-token', '_token', 'nonce'
     ],
-    ignoreClasses: [                 // CSS classes to ignore
+    ignoreClasses: [                  // CSS classes to ignore
         'timestamp', 'csrf', 'nonce', 'random'
     ],
-    userAgent: 'Comparator Bot 1.0', // User agent string
+    userAgent: 'Comparator Bot 1.0',  // User agent string
     outputDir: './comparator-results' // Output directory
 };
 ```
@@ -292,6 +295,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🔄 Version History
 
+- **1.2.0**: Crawl and discovery improvements
+  - Added `maxDiscovery` option and `--max-discovery` CLI flag
+  - Default `maxPages` now 20; discovery capped by crawled pages
+  - Updated help text and docs
 - **1.1.0**: Enhanced security and improved password input
   - **Security Enhancement**: Completely hidden password input with no visible keystrokes
   - **Professional Authentication**: Uses industry-standard `readline-sync` library for secure CLI input

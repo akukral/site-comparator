@@ -61,7 +61,8 @@ COMPARATOR_USERNAME=user COMPARATOR_PASSWORD=pass \
 const Comparator = require('@akukral/site-comparator');
 
 const comparator = new Comparator({
-    maxPages: 30,
+    maxPages: 20,
+    maxDiscovery: 500,
     delay: 1500,
     timeout: 45000
 });
@@ -98,8 +99,8 @@ await comparator.compare('https://staging.example.com', 'https://example.com');
 ## 🔧 Package Configuration
 
 ### package.json Highlights
-- **Name**: `site-comparator`
-- **Version**: `1.0.0`
+- **Name**: `@akukral/site-comparator`
+- **Version**: `1.2.0`
 - **Bin**: Global command-line tool
 - **Keywords**: Comprehensive SEO keywords
 - **License**: MIT
@@ -195,12 +196,8 @@ await comparator.compare('https://staging.example.com', 'https://example.com');
 
 ## 🔄 Version Management
 
-### Current Version: 1.0.0
-- Initial release with intelligent content comparison
-- Authentication support
-- HTML/JSON reports
-- Offset detection
-- Comprehensive examples
+### Current Version: 1.2.0
+- Crawl and discovery improvements, defaults updated
 
 ### Future Enhancements
 - Additional comparison algorithms

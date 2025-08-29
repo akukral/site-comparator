@@ -17,6 +17,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Standardized package name references across all documentation files
 - Improved clarity for users installing via npm
 
+## [1.2.0] - 2025-08-29
+
+### ✨ Added
+- New `maxDiscovery` option to cap unique links discovered during crawling (default: 500)
+- CLI flag `--max-discovery <number>` to configure discovery cap
+
+### 🔧 Changed
+- Default `maxPages` reduced from 50 to 20 to favor quicker, focused comparisons
+- Discovery loop now caps based on pages actually crawled rather than URLs discovered
+- Progress logging updated to reflect pages crawled
+
+### 📝 Documentation
+- README updated with new defaults and `maxDiscovery` option (CLI and programmatic examples)
+- Help text updated to show `--max-discovery` and revised defaults
+
+### 🐛 Fixes
+- Improved alignment between discovered pages and compared common paths by capping on crawled pages
+
 ## [1.1.0] - 2025-08-29
 
 ### 🔒 Security
