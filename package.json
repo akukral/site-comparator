@@ -1,6 +1,6 @@
 {
   "name": "@akukral/site-comparator",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "A sophisticated website comparison tool with intelligent content analysis and offset-aware difference detection",
   "keywords": [
     "website",
@@ -40,7 +40,10 @@
   "scripts": {
     "start": "node comparator.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "site-comparator": "node comparator.js"
+    "site-comparator": "node comparator.js",
+    "release:patch": "npm version patch && npm publish",
+    "release:minor": "npm version minor && npm publish",
+    "release:major": "npm version major && npm publish"
   },
   "directories": {
     "example": "examples"
@@ -48,12 +51,13 @@
   "files": [
     "comparator.js",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "dependencies": {
-    "@akukral/site-comparator": "^1.0.2",
     "cheerio": "^1.1.2",
-    "puppeteer": "^24.17.1"
+    "puppeteer": "^24.17.1",
+    "readline-sync": "^1.4.10"
   },
   "engines": {
     "node": ">=16.0.0"

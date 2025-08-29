@@ -235,10 +235,11 @@ Errors are logged and included in the final report for analysis.
 ## 🔒 Security Considerations
 
 - Credentials are never logged or stored
-- Password input is hidden during interactive prompts
+- **Password input is completely hidden** - no keystrokes visible during interactive prompts
 - Environment variables are cleared after use
 - No sensitive data is included in reports
 - Supports secure authentication methods
+- Professional-grade password input using industry-standard libraries
 
 ## 📝 Examples
 
@@ -291,8 +292,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🔄 Version History
 
+- **1.1.0**: Enhanced security and improved password input
+  - **Security Enhancement**: Completely hidden password input with no visible keystrokes
+  - **Professional Authentication**: Uses industry-standard `readline-sync` library for secure CLI input
+  - **Better User Experience**: Cleaner, more reliable authentication prompts
+  - **Dependency Updates**: Added `readline-sync` for enhanced security
+- **1.0.4**: Previous stable release
 - **1.0.0**: Initial release with intelligent content comparison
-- Features: Authentication support, HTML/JSON reports, offset detection
+  - Features: Authentication support, HTML/JSON reports, offset detection
 
 ---
 

@@ -7,6 +7,7 @@ const cheerio = require('cheerio');
 const crypto = require('crypto');
 const { URL } = require('url');
 const readline = require('readline');
+const readlineSync = require('readline-sync');
 
 class Comparator {
     constructor(options = {}) {
@@ -83,50 +84,26 @@ class Comparator {
             return { username: envUsername, password: envPassword };
         }
 
-        const rl = readline.createInterface({
-            input: process.stdin,
-            output: process.stdout
-        });
+
 
         return new Promise((resolve) => {
             console.log(`\nHTTP Authentication may be required for ${domain}`);
-            rl.question('Username (press enter to skip): ', (username) => {
-                if (!username.trim()) {
-                    rl.close();
-                    resolve(null);
-                    return;
-                }
 
-                // Hide password input
-                process.stdout.write('Password: ');
-                process.stdin.setRawMode(true);
-                process.stdin.resume();
+            // Use readline-sync for username input
+            const username = readlineSync.question('Username (press enter to skip): ');
 
-                let password = '';
-                const onData = (char) => {
-                    char = char.toString();
-                    switch (char) {
-                        case '\n':
-                        case '\r':
-                        case '\u0004':
-                            process.stdin.setRawMode(false);
-                            process.stdin.pause();
-                            process.stdin.removeListener('data', onData);
-                            console.log('\n');
-                            rl.close();
-                            resolve({ username: username.trim(), password: password });
-                            break;
-                        case '\u0003':
-                            process.exit();
-                            break;
-                        default:
-                            password += char;
-                            break;
-                    }
-                };
+            if (!username.trim()) {
+                resolve(null);
+                return;
+            }
 
-                process.stdin.on('data', onData);
+            // Use readline-sync's built-in password hiding - completely invisible keystrokes
+            const password = readlineSync.question('Password: ', {
+                hideEchoBack: true,  // This completely hides all keystrokes
+                mask: ''             // No mask character shown
             });
+
+            resolve({ username: username.trim(), password: password });
         });
     }
 
