@@ -127,7 +127,7 @@ npm install -g site-comparator
 npm install site-comparator
 
 # From source
-git clone <repository-url>
+git clone https://github.com/akukral/site-comparator
 cd site-comparator
 npm install
 npm link

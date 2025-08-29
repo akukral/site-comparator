@@ -35,8 +35,8 @@ npm install site-comparator
 ### From Source
 
 ```bash
-git clone <repository-url>
-cd comparator
+git clone https://github.com/akukral/site-comparator
+cd site-comparator
 npm install
 npm link  # Makes it available globally
 ```
