@@ -1,8 +1,8 @@
 # Release Notes - Site Comparator v1.1.0
 
-**Release Date:** January 27, 2025  
-**Version:** 1.1.0  
-**Type:** Minor Release - Security Enhancement  
+**Release Date:** January 27, 2025
+**Version:** 1.1.0
+**Type:** Minor Release - Security Enhancement
 
 ## 🚀 What's New
 
