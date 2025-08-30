@@ -17,6 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Standardized package name references across all documentation files
 - Improved clarity for users installing via npm
 
+## [1.2.1] - 2025-01-30
+
+### 🔧 Maintenance
+- Version bump for npm patch release
+- Updated user agent string to reflect new version
+- Minor documentation updates
+
 ## [1.2.0] - 2025-08-29
 
 ### ✨ Added

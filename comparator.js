@@ -19,7 +19,7 @@ class Comparator {
             ignoreElements: ['script', 'noscript', 'style'],
             ignoreAttributes: ['data-csrf', 'csrf-token', '_token', 'nonce'],
             ignoreClasses: ['timestamp', 'csrf', 'nonce', 'random'],
-            userAgent: 'Comparator Bot 1.0',
+            userAgent: 'Comparator Bot 1.2.1',
             outputDir: './comparator-results',
             ...options
         };

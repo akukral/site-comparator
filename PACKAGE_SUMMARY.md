@@ -2,7 +2,7 @@
 
 ## 🎉 What We've Accomplished
 
-We've successfully transformed the Site Comparator tool into a fully-featured, installable npm package with comprehensive documentation and examples.
+We've successfully transformed the Site Comparator tool into a installable npm package with documentation and examples.
 
 ## 📦 Package Structure
 

@@ -1,6 +1,6 @@
 # Site Comparator
 
-A sophisticated website comparison tool that performs intelligent content analysis between two websites, detecting differences while accounting for content reordering and structural changes.
+ A sophisticated website comparison tool that performs intelligent content analysis between two websites, detecting differences while accounting for content reordering and structural changes. Intended to get a general sense if your development or staging envirionment are in parity with regards to content with each other. At this point there is no funcitonality checks or visual/sylistic comparisons. This tool is intended for use on websites you have permission to crawl.
 
 ## 🚀 Features
 
