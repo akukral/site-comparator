@@ -99,6 +99,7 @@ pids
 *.pid.lock
 
 # Comparator specific
+jsdocs/
 comparator-results/
 results-*.json
 report-*.html

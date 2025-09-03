@@ -9,7 +9,36 @@ const { URL } = require('url');
 const readline = require('readline');
 const readlineSync = require('readline-sync');
 
+/**
+ * Site Comparator - A tool for comparing websites and detecting differences in content, structure, and functionality.
+ *
+ * This class provides comprehensive website comparison capabilities including:
+ * - Automated page discovery and crawling
+ * - Content normalization and comparison
+ * - Authentication handling for protected sites
+ * - Detailed difference analysis and reporting
+ * - HTML and JSON report generation
+ *
+ * @class Comparator
+ * @example
+ * const comparator = new Comparator({ maxPages: 10, delay: 2000 });
+ * await comparator.compare('https://staging.example.com', 'https://example.com');
+ */
 class Comparator {
+    /**
+     * Creates a new Comparator instance with configurable options.
+     *
+     * @param {Object} options - Configuration options for the comparator
+     * @param {number} [options.maxPages=20] - Maximum number of pages to crawl per site
+     * @param {number} [options.maxDiscovery=500] - Maximum number of unique links to discover
+     * @param {number} [options.delay=1000] - Delay between requests in milliseconds
+     * @param {number} [options.timeout=30000] - Page load timeout in milliseconds
+     * @param {string[]} [options.ignoreElements=['script', 'noscript', 'style']] - HTML elements to ignore during comparison
+     * @param {string[]} [options.ignoreAttributes=['data-csrf', 'csrf-token', '_token', 'nonce']] - HTML attributes to ignore during comparison
+     * @param {string[]} [options.ignoreClasses=['timestamp', 'csrf', 'nonce', 'random']] - CSS classes to ignore during comparison
+     * @param {string} [options.userAgent='Comparator Bot 1.3.0'] - User agent string for requests
+     * @param {string} [options.outputDir='./comparator-results'] - Directory to save comparison results
+     */
     constructor(options = {}) {
         this.options = {
             maxPages: 20,
@@ -19,7 +48,7 @@ class Comparator {
             ignoreElements: ['script', 'noscript', 'style'],
             ignoreAttributes: ['data-csrf', 'csrf-token', '_token', 'nonce'],
             ignoreClasses: ['timestamp', 'csrf', 'nonce', 'random'],
-            userAgent: 'Comparator Bot 1.2.1',
+            userAgent: 'Comparator Bot 1.3.0',
             outputDir: './comparator-results',
             ...options
         };
@@ -33,7 +62,20 @@ class Comparator {
         };
     }
 
-    // Helper method for waiting - compatible with all Puppeteer versions
+    /**
+     * Helper method for waiting - compatible with all Puppeteer versions
+     *
+     * This method provides a consistent way to wait for a specified time period
+     * across different versions of Puppeteer, handling the API changes between
+     * older versions (waitForTimeout) and newer versions (setTimeout).
+     *
+     * @async
+     * @param {Page} page - Puppeteer page instance
+     * @param {number} milliseconds - Time to wait in milliseconds
+     * @returns {Promise<void>} Promise that resolves after the specified delay
+     * @example
+     * await comparator.waitFor(page, 2000); // Wait 2 seconds
+     */
     async waitFor(page, milliseconds) {
         if (typeof page.waitForTimeout === 'function') {
             // Older Puppeteer versions
@@ -44,6 +86,19 @@ class Comparator {
         }
     }
 
+    /**
+     * Initializes the comparator by creating output directory and launching browser.
+     *
+     * This method sets up the environment for website comparison including:
+     * - Creating the output directory if it doesn't exist
+     * - Launching a Puppeteer browser instance with optimized settings
+     * - Configuring browser security and compatibility options
+     *
+     * @async
+     * @throws {Error} If browser launch fails or directory creation fails
+     * @example
+     * await comparator.init();
+     */
     async init() {
         // Create output directory
         await fs.mkdir(this.options.outputDir, { recursive: true });
@@ -63,13 +118,43 @@ class Comparator {
         });
     }
 
+    /**
+     * Cleans up resources by closing the browser instance.
+     *
+     * This method should be called when the comparator is no longer needed
+     * to free up system resources and close browser processes.
+     *
+     * @async
+     * @example
+     * await comparator.cleanup();
+     */
     async cleanup() {
         if (this.browser) {
             await this.browser.close();
         }
     }
 
-    // Get authentication credentials if needed
+    /**
+     * Retrieves authentication credentials for a domain.
+     *
+     * This method attempts to get credentials from multiple sources in order:
+     * 1. Command line options passed to the compare method
+     * 2. Environment variables (COMPARATOR_USER_<DOMAIN>, COMPARATOR_PASSWORD_<DOMAIN>)
+     * 3. Global environment variables (COMPARATOR_USERNAME, COMPARATOR_PASSWORD)
+     * 4. Interactive prompts for username and password
+     *
+     * @async
+     * @param {string} domain - The domain requiring authentication
+     * @param {Object} options - Authentication options
+     * @param {string} [options.username] - Username for authentication
+     * @param {string} [options.password] - Password for authentication
+     * @returns {Promise<Object|null>} Authentication object with username and password, or null if no credentials
+     * @example
+     * const auth = await comparator.getAuthCredentials('https://protected.example.com');
+     * if (auth) {
+     *   console.log(`Using credentials for ${auth.username}`);
+     * }
+     */
     async getAuthCredentials(domain, options = {}) {
         // Check if credentials were provided via command line or environment
         if (options.username && options.password) {
@@ -108,12 +193,39 @@ class Comparator {
         });
     }
 
-    // Helper to create environment variable key from domain
+    /**
+     * Helper to create environment variable key from domain
+     *
+     * This method converts a domain URL into a valid environment variable key
+     * by extracting the hostname and replacing non-alphanumeric characters with underscores.
+     * This is used for domain-specific authentication environment variables.
+     *
+     * @param {string} domain - Domain URL to convert
+     * @returns {string} Environment variable key for the domain
+     * @example
+     * const key = comparator.getDomainKey('https://staging.example.com');
+     * // Returns: 'STAGING_EXAMPLE_COM'
+     */
     getDomainKey(domain) {
         return new URL(domain).hostname.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase();
     }
 
-    // Create a new page with authentication if needed
+    /**
+     * Creates a new browser page with optional authentication.
+     *
+     * This method creates a new page instance with consistent configuration:
+     * - Sets user agent and viewport dimensions
+     * - Applies HTTP Basic Authentication if credentials are provided
+     * - Sets up response handlers for authentication challenges
+     *
+     * @async
+     * @param {Object} [auth=null] - Authentication credentials object
+     * @param {string} auth.username - Username for HTTP Basic Auth
+     * @param {string} auth.password - Password for HTTP Basic Auth
+     * @returns {Promise<Page>} Configured Puppeteer page instance
+     * @example
+     * const page = await comparator.createPage({ username: 'user', password: 'pass' });
+     */
     async createPage(auth = null) {
         const page = await this.browser.newPage();
 
@@ -135,7 +247,23 @@ class Comparator {
         return page;
     }
 
-    // Normalize content by removing spurious differences
+    /**
+     * Normalizes HTML content by removing spurious differences and standardizing formatting.
+     *
+     * This method performs several normalization steps to ensure fair comparison:
+     * - Removes ignored HTML elements (scripts, styles, etc.)
+     * - Strips ignored attributes (CSRF tokens, nonces, etc.)
+     * - Filters out ignored CSS classes
+     * - Normalizes URLs to account for domain differences
+     * - Removes HTML comments and normalizes whitespace
+     *
+     * @param {string} html - Raw HTML content to normalize
+     * @param {string} baseUrl - Original domain URL for URL normalization
+     * @param {string} targetUrl - Target domain URL for URL normalization
+     * @returns {string} Normalized HTML content ready for comparison
+     * @example
+     * const normalized = comparator.normalizeContent(html, 'https://site1.com', 'https://site2.com');
+     */
     normalizeContent(html, baseUrl, targetUrl) {
         const $ = cheerio.load(html);
 
@@ -190,12 +318,33 @@ class Comparator {
             .trim();
     }
 
-    // Extract content for comparison
+    /**
+     * Extracts structured content from HTML for detailed comparison.
+     *
+     * This method parses HTML and extracts key content elements:
+     * - Page title and headings
+     * - Paragraph text content
+     * - Link text and URLs
+     * - Image alt text and sources
+     * - Form structure and input fields
+     *
+     * @param {string} html - HTML content to extract from
+     * @returns {Object} Structured content object with extracted elements
+     * @returns {string} returns.title - Page title text
+     * @returns {string[]} returns.headings - Array of heading texts
+     * @returns {string[]} returns.paragraphs - Array of paragraph texts
+     * @returns {Object[]} returns.links - Array of link objects with text and href
+     * @returns {Object[]} returns.images - Array of image objects with alt and src
+     * @returns {Object[]} returns.forms - Array of form objects with action, method, and inputs
+     * @example
+     * const content = comparator.extractContent(html);
+     * console.log(`Page has ${content.headings.length} headings`);
+     */
     extractContent(html) {
         const $ = cheerio.load(html);
 
         return {
-            title: $('title').text().trim(),
+            title: $('head > title').text().trim(),
             headings: $('h1, h2, h3, h4, h5, h6').map((i, el) => $(el).text().trim()).get(),
             paragraphs: $('p').map((i, el) => $(el).text().trim()).get().filter(p => p.length > 0),
             links: $('a[href]').map((i, el) => ({
@@ -217,7 +366,33 @@ class Comparator {
         };
     }
 
-    // Compare two pages
+    /**
+     * Compares two pages and identifies differences in content and structure.
+     *
+     * This method performs comprehensive comparison of normalized content:
+     * - Compares page titles, headings, and paragraphs
+     * - Analyzes link structures and image content
+     * - Examines form structures and input fields
+     * - Uses intelligent matching to detect content reordering
+     * - Provides detailed difference analysis with snippets
+     *
+     * @param {string} url - URL path being compared
+     * @param {string} content1 - HTML content from first site
+     * @param {string} content2 - HTML content from second site
+     * @param {string} domain1 - Base domain of first site
+     * @param {string} domain2 - Base domain of second site
+     * @returns {Object} Comparison result object
+     * @returns {string} returns.url - URL path that was compared
+     * @returns {boolean} returns.hasDifferences - Whether any differences were found
+     * @returns {Array} returns.differences - Array of difference objects
+     * @returns {Object} returns.extracted1 - Extracted content from first site
+     * @returns {Object} returns.extracted2 - Extracted content from second site
+     * @example
+     * const comparison = comparator.comparePage('/about', html1, html2, 'https://site1.com', 'https://site2.com');
+     * if (comparison.hasDifferences) {
+     *   console.log(`Found ${comparison.differences.length} differences`);
+     * }
+     */
     comparePage(url, content1, content2, domain1, domain2) {
         const normalized1 = this.normalizeContent(content1, domain1, domain2);
         const normalized2 = this.normalizeContent(content2, domain2, domain1);
@@ -306,7 +481,22 @@ class Comparator {
         };
     }
 
-        // Helper method to create snippets for differences
+    /**
+     * Helper method to create snippets for differences
+     *
+     * This method creates truncated text snippets for displaying differences
+     * in reports, ensuring that long text content is displayed in a readable format.
+     *
+     * @param {string} text1 - Text from first site
+     * @param {string} text2 - Text from second site
+     * @param {number} [maxLength=100] - Maximum length for each snippet
+     * @returns {Object} Object containing truncated snippets for both sites
+     * @returns {string} returns.site1 - Truncated text from first site
+     * @returns {string} returns.site2 - Truncated text from second site
+     * @example
+     * const snippet = comparator.getSnippet('Very long text content...', 'Different long content...', 50);
+     * console.log(snippet.site1); // "Very long text content..."
+     */
     getSnippet(text1, text2, maxLength = 100) {
         const truncate = (text) => {
             if (text.length <= maxLength) return text;
@@ -319,7 +509,32 @@ class Comparator {
         };
     }
 
-    // Intelligent content difference detection that accounts for offsets
+    /**
+     * Intelligent content difference detection that accounts for offsets
+     *
+     * This method performs sophisticated content comparison that can detect:
+     * - Content additions and deletions
+     * - Content reordering
+     * - Position-independent differences
+     *
+     * It uses the longest common subsequence algorithm to identify reordering
+     * and provides detailed analysis of content changes.
+     *
+     * @param {Array} array1 - First array of content items
+     * @param {Array} array2 - Second array of content items
+     * @param {string} [contentType='content'] - Type of content being compared
+     * @returns {Object} Detailed difference analysis
+     * @returns {Array} returns.differences - Array of difference objects
+     * @returns {Array} returns.additions - Array of addition objects
+     * @returns {Array} returns.deletions - Array of deletion objects
+     * @returns {number} returns.matches - Number of matching items
+     * @returns {boolean} returns.reordered - Whether content appears to be reordered
+     * @example
+     * const analysis = comparator.findContentDifferences(headings1, headings2, 'heading');
+     * if (analysis.reordered) {
+     *   console.log('Content appears to be reordered');
+     * }
+     */
     findContentDifferences(array1, array2, contentType = 'content') {
         const differences = [];
         const additions = [];
@@ -409,7 +624,20 @@ class Comparator {
         };
     }
 
-    // Find longest common subsequence to detect reordering
+    /**
+     * Find longest common subsequence to detect reordering
+     *
+     * This method implements the longest common subsequence (LCS) algorithm
+     * to identify how much content has been reordered between two arrays.
+     * It's used to distinguish between actual content changes and simple reordering.
+     *
+     * @param {Array} arr1 - First array
+     * @param {Array} arr2 - Second array
+     * @returns {Array} Longest common subsequence between the arrays
+     * @example
+     * const lcs = comparator.findLongestCommonSubsequence(array1, array2);
+     * const reorderedCount = Math.min(array1.length, array2.length) - lcs.length;
+     */
     findLongestCommonSubsequence(arr1, arr2) {
         const m = arr1.length;
         const n = arr2.length;
@@ -444,7 +672,20 @@ class Comparator {
         return lcs;
     }
 
-    // Normalize content for comparison (remove extra whitespace, etc.)
+    /**
+     * Normalize content for comparison (remove extra whitespace, etc.)
+     *
+     * This method standardizes text content for fair comparison by:
+     * - Converting to lowercase
+     * - Trimming whitespace
+     * - Normalizing multiple spaces to single spaces
+     *
+     * @param {*} text - Text content to normalize (converted to string if not already)
+     * @returns {string} Normalized text content
+     * @example
+     * const normalized = comparator.normalizeForComparison('  Hello   World  ');
+     * // Returns: "hello world"
+     */
     normalizeForComparison(text) {
         if (typeof text !== 'string') {
             text = String(text);
@@ -455,7 +696,24 @@ class Comparator {
             .toLowerCase();
     }
 
-        // Compare headings with detailed analysis
+    /**
+     * Compare headings with detailed analysis
+     *
+     * This method compares heading structures between two sites and provides
+     * detailed analysis of differences including additions, deletions, and reordering.
+     *
+     * @param {string[]} headings1 - Headings from first site
+     * @param {string[]} headings2 - Headings from second site
+     * @returns {Object} Heading comparison result
+     * @returns {boolean} returns.hasDifferences - Whether any differences were found
+     * @returns {string[]} returns.details - Array of difference descriptions
+     * @returns {Array} returns.snippets - Array of difference snippets (limited to 5)
+     * @example
+     * const result = comparator.compareHeadings(site1Headings, site2Headings);
+     * if (result.hasDifferences) {
+     *   console.log('Heading differences:', result.details.join(', '));
+     * }
+     */
     compareHeadings(headings1, headings2) {
         const details = [];
         const snippets = [];
@@ -493,7 +751,24 @@ class Comparator {
         };
     }
 
-        // Compare paragraphs with content analysis
+    /**
+     * Compare paragraphs with content analysis
+     *
+     * This method compares paragraph content between two sites and provides
+     * detailed analysis of differences including additions, deletions, and reordering.
+     *
+     * @param {string[]} paragraphs1 - Paragraphs from first site
+     * @param {string[]} paragraphs2 - Paragraphs from second site
+     * @returns {Object} Paragraph comparison result
+     * @returns {boolean} returns.hasDifferences - Whether any differences were found
+     * @returns {string[]} returns.details - Array of difference descriptions
+     * @returns {Array} returns.snippets - Array of difference snippets (limited to 3)
+     * @example
+     * const result = comparator.compareParagraphs(site1Paragraphs, site2Paragraphs);
+     * if (result.hasDifferences) {
+     *   console.log('Paragraph differences:', result.details.join(', '));
+     * }
+     */
     compareParagraphs(paragraphs1, paragraphs2) {
         const details = [];
         const snippets = [];
@@ -531,7 +806,24 @@ class Comparator {
         };
     }
 
-        // Compare links with detailed analysis
+    /**
+     * Compare links with detailed analysis
+     *
+     * This method compares link structures between two sites and provides
+     * detailed analysis of differences including additions, deletions, and reordering.
+     *
+     * @param {Object[]} links1 - Links from first site
+     * @param {Object[]} links2 - Links from second site
+     * @returns {Object} Link comparison result
+     * @returns {boolean} returns.hasDifferences - Whether any differences were found
+     * @returns {string[]} returns.details - Array of difference descriptions
+     * @returns {Array} returns.snippets - Array of difference snippets
+     * @example
+     * const result = comparator.compareLinks(site1Links, site2Links);
+     * if (result.hasDifferences) {
+     *   console.log('Link differences:', result.details.join(', '));
+     * }
+     */
     compareLinks(links1, links2) {
         const details = [];
         const snippets = [];
@@ -573,7 +865,24 @@ class Comparator {
         };
     }
 
-    // Compare images with detailed analysis
+    /**
+     * Compare images with detailed analysis
+     *
+     * This method compares image content between two sites and provides
+     * detailed analysis of differences including counts, alt text, and sources.
+     *
+     * @param {Object[]} images1 - Images from first site
+     * @param {Object[]} images2 - Images from second site
+     * @returns {Object} Image comparison result
+     * @returns {boolean} returns.hasDifferences - Whether any differences were found
+     * @returns {string[]} returns.details - Array of difference descriptions
+     * @returns {Array} returns.snippets - Array of difference snippets
+     * @example
+     * const result = comparator.compareImages(site1Images, site2Images);
+     * if (result.hasDifferences) {
+     *   console.log('Image differences:', result.details.join(', '));
+     * }
+     */
     compareImages(images1, images2) {
         const details = [];
         const snippets = [];
@@ -622,7 +931,24 @@ class Comparator {
         };
     }
 
-    // Compare forms with detailed analysis
+    /**
+     * Compare forms with detailed analysis
+     *
+     * This method compares form structures between two sites and provides
+     * detailed analysis of differences including actions, methods, and input fields.
+     *
+     * @param {Object[]} forms1 - Forms from first site
+     * @param {Object[]} forms2 - Forms from second site
+     * @returns {Object} Form comparison result
+     * @returns {boolean} returns.hasDifferences - Whether any differences were found
+     * @returns {string[]} returns.details - Array of difference descriptions
+     * @returns {Array} returns.snippets - Array of difference snippets
+     * @example
+     * const result = comparator.compareForms(site1Forms, site2Forms);
+     * if (result.hasDifferences) {
+     *   console.log('Form differences:', result.details.join(', '));
+     * }
+     */
     compareForms(forms1, forms2) {
         const details = [];
         const snippets = [];
@@ -654,7 +980,18 @@ class Comparator {
         };
     }
 
-    // Generate summary of difference types found
+    /**
+     * Generate summary of difference types found
+     *
+     * This method analyzes all differences found during comparison and provides
+     * a count of each type of difference (titles, headings, paragraphs, etc.).
+     *
+     * @returns {Object} Object with counts for each difference type
+     * @example
+     * const summary = comparator.getDifferenceTypeSummary();
+     * console.log(`Found ${summary.title || 0} title differences`);
+     * console.log(`Found ${summary.headings || 0} heading differences`);
+     */
     getDifferenceTypeSummary() {
         const typeCounts = {};
 
@@ -667,7 +1004,18 @@ class Comparator {
         return typeCounts;
     }
 
-        // Get the most significant differences for quick overview
+    /**
+     * Get the most significant differences for quick overview
+     *
+     * This method identifies the most important differences found during comparison
+     * based on criteria like title changes, content with snippets, and large count differences.
+     * It's useful for providing a quick summary of the most impactful changes.
+     *
+     * @returns {Array} Array of significant difference objects (limited to top 5)
+     * @example
+     * const significant = comparator.getSignificantDifferences();
+     * console.log(`Found ${significant.length} significant differences`);
+     */
     getSignificantDifferences() {
         const significant = [];
 
@@ -693,7 +1041,26 @@ class Comparator {
         return significant.slice(0, 5); // Return top 5 most significant
     }
 
-    // Get a summary of offset analysis results
+    /**
+     * Get a summary of offset analysis results
+     *
+     * This method provides a comprehensive summary of content changes including:
+     * - Pages with additions, deletions, and reordering
+     * - Total counts of content changes
+     * - Breakdown by content type
+     *
+     * @returns {Object} Summary of content change analysis
+     * @returns {number} returns.totalPages - Total pages analyzed
+     * @returns {number} returns.pagesWithAdditions - Pages with content additions
+     * @returns {number} returns.pagesWithDeletions - Pages with content deletions
+     * @returns {number} returns.pagesWithReordering - Pages with content reordering
+     * @returns {number} returns.totalAdditions - Total content items added
+     * @returns {number} returns.totalDeletions - Total content items removed
+     * @returns {Object} returns.contentTypes - Breakdown by content type
+     * @example
+     * const analysis = comparator.getOffsetAnalysisSummary();
+     * console.log(`${analysis.totalAdditions} items were added across all pages`);
+     */
     getOffsetAnalysisSummary() {
         const summary = {
             totalPages: this.results.differences.length,
@@ -736,7 +1103,30 @@ class Comparator {
         return summary;
     }
 
-    // Crawl a single page
+    /**
+     * Crawls a single page to extract content and discover links.
+     *
+     * This method handles the process of visiting a page:
+     * - Navigates to the specified URL with proper waiting
+     * - Extracts the page content and status
+     * - Discovers internal links for further crawling
+     * - Handles errors gracefully and provides detailed error information
+     *
+     * @async
+     * @param {Page} page - Puppeteer page instance to use for crawling
+     * @param {string} url - URL to crawl
+     * @param {Object} [auth=null] - Authentication credentials if needed
+     * @returns {Promise<Object>} Crawl result object
+     * @returns {string|null} returns.content - HTML content of the page, or null if failed
+     * @returns {string[]} returns.links - Array of discovered internal links
+     * @returns {number} returns.status - HTTP status code of the response
+     * @returns {string} [returns.error] - Error message if crawling failed
+     * @example
+     * const result = await comparator.crawlPage(page, 'https://example.com/page');
+     * if (result.content) {
+     *   console.log(`Found ${result.links.length} links on page`);
+     * }
+     */
     async crawlPage(page, url, auth = null) {
         try {
             console.log(`Crawling: ${url}`);
@@ -774,7 +1164,24 @@ class Comparator {
         }
     }
 
-    // Discover pages to compare
+    /**
+     * Discovers pages on a domain by crawling and following internal links.
+     *
+     * This method implements intelligent page discovery:
+     * - Starts from the root domain and follows internal links
+     * - Respects maximum page and discovery limits
+     * - Avoids duplicate visits and external links
+     * - Provides progress updates during discovery
+     * - Handles authentication challenges automatically
+     *
+     * @async
+     * @param {string} domain - Domain to discover pages from
+     * @param {Object} [auth=null] - Authentication credentials if needed
+     * @returns {Promise<Map>} Map of discovered pages with their content and links
+     * @example
+     * const pages = await comparator.discoverPages('https://example.com');
+     * console.log(`Discovered ${pages.size} pages`);
+     */
     async discoverPages(domain, auth = null) {
         const page = await this.createPage(auth);
         const discovered = new Set([domain]);
@@ -823,13 +1230,41 @@ class Comparator {
             }
         }
 
-        await page.close();
-        console.log(`✅ Finished discovering ${pages.size} pages from ${domain}`);
-        console.log(`📊 Total links found: ${Array.from(pages.values()).reduce((sum, page) => sum + (page.links ? page.links.length : 0), 0)}`);
+                await page.close();
+
+        console.log(`✅ Finished compairing ${pages.size} pages from ${domain}`);
         return pages;
     }
 
-    // Main comparison function
+    /**
+     * Main comparison function that orchestrates the entire comparison process.
+     *
+     * This is the primary method for comparing two websites:
+     * - Initializes the comparator and browser
+     * - Handles authentication for both sites
+     * - Discovers pages on both sites
+     * - Compares common pages for differences
+     * - Generates comprehensive reports
+     * - Saves results in multiple formats
+     *
+     * @async
+     * @param {string} domain1 - First domain to compare
+     * @param {string} domain2 - Second domain to compare
+     * @param {Object} [authOptions={}] - Authentication options for both sites
+     * @param {Object} [authOptions.site1] - Authentication for first site
+     * @param {Object} [authOptions.site2] - Authentication for second site
+     * @throws {Error} If comparison fails or authentication is invalid
+     * @example
+     * try {
+     *   await comparator.compare('https://staging.example.com', 'https://example.com', {
+     *     site1: { username: 'user1', password: 'pass1' },
+     *     site2: { username: 'user2', password: 'pass2' }
+     *   });
+     *   console.log('Comparison completed successfully');
+     * } catch (error) {
+     *   console.error('Comparison failed:', error.message);
+     * }
+     */
     async compare(domain1, domain2, authOptions = {}) {
         console.log(`Starting comparison between:\n  Site 1: ${domain1}\n  Site 2: ${domain2}\n`);
 
@@ -867,14 +1302,31 @@ class Comparator {
                 this.discoverPages(domain2, auth2)
             ]);
 
-            console.log(`\nFound ${pages1.size} pages on site 1, ${pages2.size} pages on site 2`);
+            // console.log(`\nFound ${pages1.size} pages on site 1, ${pages2.size} pages on site 2`);
 
             // Find common paths for comparison
             const paths1 = new Set(Array.from(pages1.keys()).map(url => new URL(url).pathname));
             const paths2 = new Set(Array.from(pages2.keys()).map(url => new URL(url).pathname));
             const commonPaths = [...paths1].filter(path => paths2.has(path));
 
+            // Find non-comparable pages (pages that exist on only one site)
+            const onlyOnSite1 = [...paths1].filter(path => !paths2.has(path));
+            const onlyOnSite2 = [...paths2].filter(path => !paths1.has(path));
+
             console.log(`\nComparing ${commonPaths.length} common paths...\n`);
+
+            // Show non-comparable pages
+            if (onlyOnSite1.length > 0) {
+                console.log(`📄 Pages only on ${domain1} (${onlyOnSite1.length}):`);
+                onlyOnSite1.forEach(path => console.log(`   ${path}`));
+                console.log('');
+            }
+
+            if (onlyOnSite2.length > 0) {
+                console.log(`📄 Pages only on ${domain2} (${onlyOnSite2.length}):`);
+                onlyOnSite2.forEach(path => console.log(`   ${path}`));
+                console.log('');
+            }
 
             // Compare common pages
             for (const path of commonPaths) {
@@ -916,7 +1368,12 @@ class Comparator {
                 site1: domain1,
                 site2: domain2,
                 timestamp: new Date().toISOString(),
-                differenceTypes: this.getDifferenceTypeSummary()
+                differenceTypes: this.getDifferenceTypeSummary(),
+                nonComparablePages: {
+                    onlyOnSite1: onlyOnSite1,
+                    onlyOnSite2: onlyOnSite2,
+                    totalNonComparable: onlyOnSite1.length + onlyOnSite2.length
+                }
             };
 
             // Save results
@@ -936,7 +1393,33 @@ class Comparator {
         }
     }
 
-    // Test authentication credentials
+    /**
+     * Tests authentication credentials for a domain before proceeding with comparison.
+     *
+     * This method validates credentials by attempting to access the domain:
+     * - Tests the provided credentials against the target domain
+     * - Checks for various authentication failure scenarios
+     * - Detects redirects to login pages
+     * - Provides detailed error information for troubleshooting
+     *
+     * @async
+     * @param {string} domain - Domain to test authentication against
+     * @param {Object} auth - Authentication credentials to test
+     * @param {string} auth.username - Username for authentication
+     * @param {string} auth.password - Password for authentication
+     * @returns {Promise<Object>} Authentication test result
+     * @returns {boolean} returns.success - Whether authentication was successful
+     * @returns {number} [returns.status] - HTTP status code if successful
+     * @returns {string} [returns.error] - Error message if authentication failed
+     * @example
+     * const result = await comparator.testAuthentication('https://protected.example.com', {
+     *   username: 'user',
+     *   password: 'pass'
+     * });
+     * if (!result.success) {
+     *   console.error('Authentication failed:', result.error);
+     * }
+     */
     async testAuthentication(domain, auth) {
         const page = await this.createPage(auth);
 
@@ -978,6 +1461,21 @@ class Comparator {
         }
     }
 
+    /**
+     * Saves comparison results to files in the configured output directory.
+     *
+     * This method creates two types of output files:
+     * - JSON file with detailed comparison data
+     * - HTML file with formatted report for easy viewing
+     *
+     * Files are named with timestamps to avoid overwriting previous results.
+     *
+     * @async
+     * @throws {Error} If file writing fails
+     * @example
+     * await comparator.saveResults();
+     * console.log('Results saved to', comparator.options.outputDir);
+     */
     async saveResults() {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
 
@@ -995,6 +1493,21 @@ class Comparator {
         );
     }
 
+    /**
+     * Generates an HTML report summarizing the comparison results.
+     *
+     * This method creates a comprehensive HTML report including:
+     * - Summary metrics and statistics
+     * - Detailed difference analysis
+     * - Content change breakdowns
+     * - Error summaries
+     * - Responsive design for various screen sizes
+     *
+     * @returns {string} Complete HTML document as a string
+     * @example
+     * const htmlReport = comparator.generateHTMLReport();
+     * await fs.writeFile('report.html', htmlReport);
+     */
     generateHTMLReport() {
         const { summary, differences, errors } = this.results;
 
@@ -1049,7 +1562,36 @@ class Comparator {
                     <h3>Errors</h3>
                     <div class="value" style="color: ${summary.errors > 0 ? '#d97706' : '#059669'}">${summary.errors}</div>
                 </div>
+                <div class="metric">
+                    <h3>Non-Comparable Pages</h3>
+                    <div class="value" style="color: ${summary.nonComparablePages && summary.nonComparablePages.totalNonComparable > 0 ? '#d97706' : '#059669'}">${summary.nonComparablePages ? summary.nonComparablePages.totalNonComparable : 0}</div>
+                </div>
             </div>
+
+            ${summary.nonComparablePages && summary.nonComparablePages.totalNonComparable > 0 ? `
+            <div class="section">
+                <h2>Non-Comparable Pages</h2>
+                <p style="color: #64748b; margin-bottom: 20px;">These pages exist on only one site and cannot be compared.</p>
+
+                ${summary.nonComparablePages.onlyOnSite1.length > 0 ? `
+                <div style="margin-bottom: 20px;">
+                    <h3 style="color: #1e293b; margin-bottom: 10px;">📄 Pages only on ${summary.site1} (${summary.nonComparablePages.onlyOnSite1.length})</h3>
+                    <div style="background: #f8fafc; padding: 15px; border-radius: 6px; border-left: 4px solid #3b82f6;">
+                        ${summary.nonComparablePages.onlyOnSite1.map(path => `<div style="padding: 5px 0; font-family: monospace; color: #475569;">${path}</div>`).join('')}
+                    </div>
+                </div>
+                ` : ''}
+
+                ${summary.nonComparablePages.onlyOnSite2.length > 0 ? `
+                <div style="margin-bottom: 20px;">
+                    <h3 style="color: #1e293b; margin-bottom: 10px;">📄 Pages only on ${summary.site2} (${summary.nonComparablePages.onlyOnSite2.length})</h3>
+                    <div style="background: #f8fafc; padding: 15px; border-radius: 6px; border-left: 4px solid #10b981;">
+                        ${summary.nonComparablePages.onlyOnSite2.map(path => `<div style="padding: 5px 0; font-family: monospace; color: #475569;">${path}</div>`).join('')}
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+            ` : ''}
 
             ${summary.differenceTypes && Object.keys(summary.differenceTypes).length > 0 ? `
             <div class="section">
@@ -1208,7 +1750,41 @@ class Comparator {
     }
 }
 
-// CLI Interface
+/**
+ * Main CLI entry point for the site comparator tool.
+ *
+ * This function handles command-line argument parsing and initiates the comparison process.
+ * It provides usage information, parses options, and creates a Comparator instance
+ * to perform the website comparison.
+ *
+ * Command line usage:
+ *   site-comparator <domain1> <domain2> [options]
+ *
+ * Options:
+ *   --max-pages <number>      Maximum pages to crawl (default: 20)
+ *   --max-discovery <number>  Maximum unique links to discover (default: 500)
+ *   --delay <ms>              Delay between requests (default: 1000)
+ *   --timeout <ms>            Page load timeout (default: 30000)
+ *   --output-dir <path>       Output directory (default: ./comparator-results)
+ *
+ * Environment Variables:
+ *   COMPARATOR_USERNAME      Default username for both sites
+ *   COMPARATOR_PASSWORD      Default password for both sites
+ *   COMPARATOR_USER_<KEY>    Username for specific domain
+ *   COMPARATOR_PASS_<KEY>    Password for specific domain
+ *
+ * @async
+ * @throws {Error} If comparison fails or invalid arguments are provided
+ * @example
+ * // Basic usage
+ * node comparator.js https://staging.example.com https://example.com
+ *
+ * // With options
+ * node comparator.js https://staging.example.com https://example.com --max-pages 50 --delay 2000
+ *
+ * // With authentication via environment variables
+ * COMPARATOR_USERNAME=user COMPARATOR_PASSWORD=pass node comparator.js https://staging.example.com https://example.com
+ */
 async function main() {
     const args = process.argv.slice(2);
 
