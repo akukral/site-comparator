@@ -295,7 +295,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🔄 Version History
 
-- **1.3.0**: Minor release with maintenance updates and JSDoc comments
+- **1.4.0**: Minor release with maintenance updates and JSDoc comments
 - **1.2.0**: Crawl and discovery improvements
   - Added `maxDiscovery` option and `--max-discovery` CLI flag
   - Default `maxPages` now 20; discovery capped by crawled pages

@@ -100,7 +100,7 @@ await comparator.compare('https://staging.example.com', 'https://example.com');
 
 ### package.json Highlights
 - **Name**: `@akukral/site-comparator`
-- **Version**: `1.3.0`
+- **Version**: `1.4.0`
 - **Bin**: Global command-line tool
 - **Keywords**: Comprehensive SEO keywords
 - **License**: MIT
@@ -196,7 +196,7 @@ await comparator.compare('https://staging.example.com', 'https://example.com');
 
 ## 🔄 Version Management
 
-### Current Version: 1.3.0
+### Current Version: 1.4.0
 - Minor release with maintenance updates and JSDoc comments
 
 ### Future Enhancements

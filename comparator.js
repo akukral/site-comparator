@@ -36,7 +36,7 @@ class Comparator {
      * @param {string[]} [options.ignoreElements=['script', 'noscript', 'style']] - HTML elements to ignore during comparison
      * @param {string[]} [options.ignoreAttributes=['data-csrf', 'csrf-token', '_token', 'nonce']] - HTML attributes to ignore during comparison
      * @param {string[]} [options.ignoreClasses=['timestamp', 'csrf', 'nonce', 'random']] - CSS classes to ignore during comparison
-     * @param {string} [options.userAgent='Comparator Bot 1.3.0'] - User agent string for requests
+     * @param {string} [options.userAgent='Comparator Bot 1.4.0'] - User agent string for requests
      * @param {string} [options.outputDir='./comparator-results'] - Directory to save comparison results
      */
     constructor(options = {}) {
@@ -48,7 +48,7 @@ class Comparator {
             ignoreElements: ['script', 'noscript', 'style'],
             ignoreAttributes: ['data-csrf', 'csrf-token', '_token', 'nonce'],
             ignoreClasses: ['timestamp', 'csrf', 'nonce', 'random'],
-            userAgent: 'Comparator Bot 1.3.0',
+            userAgent: 'Comparator Bot 1.4.0',
             outputDir: './comparator-results',
             ...options
         };
