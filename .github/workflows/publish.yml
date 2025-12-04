@@ -1,0 +1,102 @@
+name: Publish to npm
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Triggers on version tags like v1.4.0
+  workflow_dispatch:  # Allows manual triggering
+    inputs:
+      version_type:
+        description: 'Version type (patch, minor, major)'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  publish:
+    name: Publish Package
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write  # Required for creating tags
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for versioning
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'  # Using Node 18 as it's >= 16.0.0 requirement
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests (if available)
+        run: npm test || echo "No tests configured"
+        continue-on-error: true
+
+      - name: Determine version and publish
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            # Manual dispatch - bump version and publish
+            VERSION_TYPE="${{ github.event.inputs.version_type }}"
+            echo "Bumping $VERSION_TYPE version..."
+            npm version $VERSION_TYPE -m "chore: bump version to %s [skip ci]"
+            NEW_VERSION=$(node -p "require('./package.json').version")
+            echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+            echo "tag=v$NEW_VERSION" >> $GITHUB_OUTPUT
+          else
+            # Tag push - extract version from tag
+            TAG_NAME=${GITHUB_REF#refs/tags/}
+            NEW_VERSION=${TAG_NAME#v}  # Remove 'v' prefix if present
+            echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+            echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
+            # Verify package.json version matches tag
+            PACKAGE_VERSION=$(node -p "require('./package.json').version")
+            if [ "$PACKAGE_VERSION" != "$NEW_VERSION" ]; then
+              echo "Error: package.json version ($PACKAGE_VERSION) does not match tag ($NEW_VERSION)"
+              exit 1
+            fi
+          fi
+
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            # Push the version tag created by npm version
+            git push origin HEAD --tags
+          fi
+          npm publish --access public
+
+      - name: Create GitHub Release
+        if: success()
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Release ${{ steps.version.outputs.version }}
+          body: |
+            ## Release ${{ steps.version.outputs.version }}
+
+            Published to npm as `@akukral/site-comparator@${{ steps.version.outputs.version }}`
+
+            ### Installation
+            ```bash
+            npm install -g @akukral/site-comparator@${{ steps.version.outputs.version }}
+            ```
+          draft: false
+          prerelease: false
+

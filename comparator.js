@@ -141,7 +141,10 @@ class Comparator {
      * 1. Command line options passed to the compare method
      * 2. Environment variables (COMPARATOR_USER_<DOMAIN>, COMPARATOR_PASSWORD_<DOMAIN>)
      * 3. Global environment variables (COMPARATOR_USERNAME, COMPARATOR_PASSWORD)
-     * 4. Interactive prompts for username and password
+     * 4. Interactive prompts for username and password (only if authentication is required)
+     *
+     * LOGICAL ORDER: First check for existing credentials, then test if auth is needed
+     * This prevents unnecessary authentication testing when credentials are already available.
      *
      * @async
      * @param {string} domain - The domain requiring authentication
@@ -170,10 +173,18 @@ class Comparator {
             return { username: envUsername, password: envPassword };
         }
 
+        // Test if authentication is actually required before prompting
+        console.log(`Testing if authentication is required for ${domain}...`);
+        const authRequired = await this.isAuthenticationRequired(domain);
 
+        if (!authRequired) {
+            console.log(`✅ No authentication required for ${domain}`);
+            return null;
+        }
 
+        // Only prompt for credentials if authentication is actually required
         return new Promise((resolve) => {
-            console.log(`\nHTTP Authentication may be required for ${domain}`);
+            console.log(`\nHTTP Authentication is required for ${domain}`);
 
             // Use readline-sync for username input
             const username = readlineSync.question('Username (press enter to skip): ');
@@ -194,6 +205,100 @@ class Comparator {
     }
 
     /**
+     * Tests whether authentication is required for a domain.
+     *
+     * This method attempts to access the domain without authentication to determine
+     * if credentials are needed. It checks for common authentication indicators:
+     * - HTTP 401 Unauthorized responses
+     * - HTTP 403 Forbidden responses
+     * - Redirects to login pages
+     * - Authentication challenge headers
+     * - Network errors that indicate authentication rejection
+     *
+     * @async
+     * @param {string} domain - Domain to test for authentication requirements
+     * @returns {Promise<boolean>} True if authentication is required, false otherwise
+     * @example
+     * const needsAuth = await comparator.isAuthenticationRequired('https://example.com');
+     * if (needsAuth) {
+     *   console.log('This site requires authentication');
+     * }
+     */
+    async isAuthenticationRequired(domain) {
+        // Create a temporary page without authentication
+        const page = await this.browser.newPage();
+
+        try {
+            await page.setUserAgent(this.options.userAgent);
+            await page.setViewport({ width: 1920, height: 1080 });
+
+            // Set up response handler to detect authentication challenges
+            let authRequired = false;
+
+            page.on('response', (response) => {
+                const status = response.status();
+                const headers = response.headers();
+
+                // Check for authentication-related status codes
+                if (status === 401 || status === 403) {
+                    authRequired = true;
+                }
+
+                // Check for authentication challenge headers
+                if (headers['www-authenticate'] || headers['x-auth-required']) {
+                    authRequired = true;
+                }
+            });
+
+            // Attempt to access the domain
+            const response = await page.goto(domain, {
+                waitUntil: 'domcontentloaded',
+                timeout: Math.min(this.options.timeout, 15000) // Use shorter timeout for auth test
+            });
+
+            // Wait a moment for any redirects or dynamic content
+            await this.waitFor(page, 2000);
+
+            const finalUrl = page.url();
+            const status = response.status();
+
+            // Check if we were redirected to a login page
+            if (finalUrl.toLowerCase().includes('login') && !domain.toLowerCase().includes('login')) {
+                authRequired = true;
+            }
+
+            // Check if the response indicates authentication is required
+            if (status === 401 || status === 403) {
+                authRequired = true;
+            }
+
+            return authRequired;
+
+        } catch (error) {
+            // Handle specific authentication-related errors
+            const errorMessage = error.message.toLowerCase();
+
+            // These errors typically indicate authentication is required
+            if (errorMessage.includes('err_invalid_auth_credentials') ||
+                errorMessage.includes('unauthorized') ||
+                errorMessage.includes('forbidden') ||
+                errorMessage.includes('401') ||
+                errorMessage.includes('403')) {
+                console.log(`✅ Authentication required for ${domain} (detected from error: ${error.message})`);
+                return true;
+            }
+
+            // For other network errors, we can't determine if auth is required
+            // Log the error but don't assume authentication is needed
+            console.warn(`Could not determine authentication requirement for ${domain}:`, error.message);
+            console.log(`⚠️  Assuming authentication might be required for ${domain} due to access error`);
+            return true; // Assume authentication is required if we can't determine
+        } finally {
+            await page.close();
+        }
+    }
+
+    /**
      * Helper to create environment variable key from domain
      *
      * This method converts a domain URL into a valid environment variable key
@@ -208,6 +313,55 @@ class Comparator {
      */
     getDomainKey(domain) {
         return new URL(domain).hostname.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase();
+    }
+
+    /**
+     * Checks if a URL ends with a file extension that should be ignored.
+     *
+     * This method determines whether a URL points to a file that should be skipped
+     * during page discovery. It checks against a comprehensive list of common file
+     * extensions including documents, images, videos, archives, and other binary files.
+     *
+     * @param {string} url - URL to check for file extension
+     * @returns {boolean} True if the URL ends with a file extension that should be ignored
+     * @example
+     * const shouldIgnore = comparator.isFileUrl('https://example.com/document.pdf');
+     * // Returns: true
+     */
+    isFileUrl(url) {
+        // Common file extensions to ignore
+        const fileExtensions = [
+            // Documents
+            'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'odt', 'ods', 'odp',
+            // Images
+            'jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp', 'ico', 'tiff', 'tif',
+            // Videos
+            'mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', 'm4v',
+            // Audio
+            'mp3', 'wav', 'flac', 'aac', 'ogg', 'wma', 'm4a',
+            // Archives
+            'zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'xz',
+            // Executables
+            'exe', 'msi', 'dmg', 'pkg', 'deb', 'rpm', 'app',
+            // Code/Data files
+            'js', 'css', 'json', 'xml', 'csv', 'sql', 'log',
+            // Fonts
+            'ttf', 'otf', 'woff', 'woff2', 'eot',
+            // Other
+            'txt', 'rtf', 'psd', 'ai', 'eps', 'sketch', 'fig'
+        ];
+
+        try {
+            const urlObj = new URL(url);
+            const pathname = urlObj.pathname.toLowerCase();
+
+            // Check if pathname ends with any of the file extensions
+            return fileExtensions.some(ext => pathname.endsWith('.' + ext));
+        } catch (e) {
+            // If URL parsing fails, check the string directly
+            const lowerUrl = url.toLowerCase();
+            return fileExtensions.some(ext => lowerUrl.endsWith('.' + ext));
+        }
     }
 
     /**
@@ -238,11 +392,11 @@ class Comparator {
         }
 
         // Handle authentication challenges
-        page.on('response', async (response) => {
-            if (response.status() === 401 && auth) {
-                console.log(`Authentication challenge detected for ${response.url()}`);
-            }
-        });
+        // page.on('response', async (response) => {
+        //     if (response.status() === 401 && auth) {
+        //         console.log(`Authentication challenge detected and ${response.url()}`);
+        //     }
+        // });
 
         return page;
     }
@@ -1199,6 +1353,12 @@ class Comparator {
             const result = await this.crawlPage(page, url, auth);
             pages.set(url, result);
 
+            // Check if we've reached the maxPages limit after crawling this page
+            if (pages.size >= this.options.maxPages) {
+                console.log(`🛑 Reached maximum page limit (${this.options.maxPages}). Stopping page discovery.`);
+                break;
+            }
+
             if (result.content && result.links && result.links.length > 0) {
                 // Add internal links to discovery queue
                 result.links.forEach(link => {
@@ -1211,6 +1371,7 @@ class Comparator {
                             !discovered.has(link) &&
                             !link.includes('#') && // Skip anchor links
                             !link.includes('?') && // Skip query parameters for now
+                            !this.isFileUrl(link) && // Skip file links (pdf, xls, jpg, etc.)
                             pages.size < this.options.maxPages &&
                             discovered.size < this.options.maxDiscovery) {
 
@@ -1230,9 +1391,9 @@ class Comparator {
             }
         }
 
-                await page.close();
+        await page.close();
 
-        console.log(`✅ Finished compairing ${pages.size} pages from ${domain}`);
+        console.log(`✅ Finished discovering ${pages.size} pages from ${domain}`);
         return pages;
     }
 
@@ -1825,6 +1986,7 @@ Environment Variables:
 
 Features:
   ✅ Handles HTTP Basic Authentication
+  ✅ Smart authentication detection (only prompts when needed)
   ✅ Interactive credential prompts (with hidden password input)
   ✅ Environment variable support for CI/CD
   ✅ Per-domain authentication configuration
